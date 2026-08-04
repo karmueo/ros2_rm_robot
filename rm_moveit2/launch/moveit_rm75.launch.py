@@ -20,6 +20,7 @@ def generate_launch_description():
             DeclareLaunchArgument("acceleration_scaling", default_value="0.3"),
             DeclareLaunchArgument("planning_time", default_value="5.0"),
             DeclareLaunchArgument("home_named_target", default_value="forward"),
+            DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("enable_pose_target", default_value="false"),
             DeclareLaunchArgument("pose_target_csv", default_value=""),
             DeclareLaunchArgument("pose_target_position_in_mm", default_value="true"),
@@ -32,6 +33,9 @@ def generate_launch_description():
                 parameters=[
                     moveit_config.to_dict(),
                     {
+                        "use_sim_time": ParameterValue(
+                            LaunchConfiguration("use_sim_time"), value_type=bool
+                        ),
                         "planning_group": LaunchConfiguration("planning_group"),
                         "current_state_wait_sec": ParameterValue(
                             LaunchConfiguration("current_state_wait_sec"), value_type=float
