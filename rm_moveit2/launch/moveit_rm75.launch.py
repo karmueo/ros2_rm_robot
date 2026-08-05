@@ -22,6 +22,7 @@ def generate_launch_description():
             DeclareLaunchArgument("home_named_target", default_value="forward"),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument("enable_pose_target", default_value="false"),
+            DeclareLaunchArgument("enable_base_rotation_demo", default_value="true"),
             DeclareLaunchArgument("pose_target_csv", default_value=""),
             DeclareLaunchArgument("pose_target_position_in_mm", default_value="true"),
             DeclareLaunchArgument("pose_target_rpy_in_degrees", default_value="false"),
@@ -50,6 +51,10 @@ def generate_launch_description():
                             LaunchConfiguration("planning_time"), value_type=float
                         ),
                         "home_named_target": LaunchConfiguration("home_named_target"),
+                        "enable_base_rotation_demo": ParameterValue(
+                            value=LaunchConfiguration("enable_base_rotation_demo"),
+                            value_type=bool,
+                        ),
                         "enable_pose_target": ParameterValue(
                             LaunchConfiguration("enable_pose_target"), value_type=bool
                         ),
