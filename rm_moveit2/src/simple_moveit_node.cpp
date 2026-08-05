@@ -7,6 +7,7 @@
 
 #include <Eigen/Geometry>
 
+#include "moveit_node/base_rotation_demo.hpp"
 #include "moveit_node/linear_motion_node.hpp"
 
 namespace
@@ -263,6 +264,29 @@ int main(int argc, char *argv[])
         rclcpp::shutdown();
         spinner.join();
         return 0;
+    }
+
+    const bool enable_base_rotation_demo =
+        node->get_parameter("enable_base_rotation_demo").as_bool();
+
+    std::string rotation_error;
+    const auto execute_rotation_step = [&node](const moveit_node::BaseRotationStep & step) {
+        RCLCPP_INFO(node->get_logger(), "=== 底座扫转示教: %s ===", step.context.c_str());
+        return node->moveToJointTarget(step.joint_values, step.context);
+    };
+
+    if (!moveit_node::executeBaseRotationDemo(
+            enable_base_rotation_demo,
+            node->getActiveJointNames(),
+            joint_status,
+            execute_rotation_step,
+            rotation_error))
+    {
+        RCLCPP_ERROR(
+            node->get_logger(), "底座扫转示教失败: %s，停止后续示教", rotation_error.c_str());
+        rclcpp::shutdown();
+        spinner.join();
+        return 1;
     }
 
     std::vector<double> startup_joint_target;
