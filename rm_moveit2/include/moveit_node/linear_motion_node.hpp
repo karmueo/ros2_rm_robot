@@ -112,6 +112,13 @@ public:
      */
     std::size_t getJointCount() const;
 
+    /**
+     * @brief 获取当前规划组的活动关节名称，顺序与关节目标数组一致。
+     *
+     * @return 当前活动关节名称列表。
+     */
+    const std::vector<std::string> & getActiveJointNames() const;
+
 private:
     /**
      * @brief 仅在参数未声明时声明参数，避免重复声明。
