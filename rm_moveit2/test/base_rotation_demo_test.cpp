@@ -21,12 +21,16 @@ TEST(BaseRotationDemoTest, BuildsInheritedTargetsByJointName)
   EXPECT_DOUBLE_EQ(steps[0].joint_values[1], 0.2);
   EXPECT_DOUBLE_EQ(steps[0].joint_values[2], 1.5707963267948966);
   EXPECT_DOUBLE_EQ(steps[0].joint_values[3], 1.1);
+
   EXPECT_DOUBLE_EQ(steps[1].joint_values[1], -3.1);
+  EXPECT_DOUBLE_EQ(steps[1].joint_values[0], 0.4);
   EXPECT_DOUBLE_EQ(steps[1].joint_values[2], 1.5707963267948966);
+  EXPECT_DOUBLE_EQ(steps[1].joint_values[3], 1.1);
+
   EXPECT_DOUBLE_EQ(steps[2].joint_values[1], 3.1);
+  EXPECT_DOUBLE_EQ(steps[2].joint_values[0], 0.4);
   EXPECT_DOUBLE_EQ(steps[2].joint_values[2], 1.5707963267948966);
-  EXPECT_DOUBLE_EQ(steps[2].joint_values[0], steps[1].joint_values[0]);
-  EXPECT_DOUBLE_EQ(steps[2].joint_values[3], steps[1].joint_values[3]);
+  EXPECT_DOUBLE_EQ(steps[2].joint_values[3], 1.1);
 }
 
 TEST(BaseRotationDemoTest, RejectsMissingRequiredJoint)
@@ -40,6 +44,17 @@ TEST(BaseRotationDemoTest, RejectsMissingRequiredJoint)
   EXPECT_NE(error.find("joint2"), std::string::npos);
 }
 
+TEST(BaseRotationDemoTest, RejectsMissingBaseRotationJoint1)
+{
+  std::vector<moveit_node::BaseRotationStep> steps;
+  std::string error;
+
+  EXPECT_FALSE(moveit_node::buildBaseRotationDemoTargets(
+      {"joint2", "joint3"}, {0.0, 0.0}, steps, error));
+  EXPECT_TRUE(steps.empty());
+  EXPECT_NE(error.find("joint1"), std::string::npos);
+}
+
 TEST(BaseRotationDemoTest, RejectsMismatchedJointStateSize)
 {
   std::vector<moveit_node::BaseRotationStep> steps;
@@ -48,6 +63,18 @@ TEST(BaseRotationDemoTest, RejectsMismatchedJointStateSize)
   EXPECT_FALSE(moveit_node::buildBaseRotationDemoTargets(
       {"joint1", "joint2"}, {0.0}, steps, error));
   EXPECT_TRUE(steps.empty());
+  EXPECT_FALSE(error.empty());
+}
+
+TEST(BaseRotationDemoTest, RejectsOversizedCurrentStateVector)
+{
+  std::vector<moveit_node::BaseRotationStep> steps;
+  std::string error;
+
+  EXPECT_FALSE(moveit_node::buildBaseRotationDemoTargets(
+      {"joint1", "joint2"}, {0.0, 0.0, 0.0}, steps, error));
+  EXPECT_TRUE(steps.empty());
+  EXPECT_FALSE(error.empty());
 }
 
 TEST(BaseRotationDemoTest, BaseRotationIsDisabledByGenericDefault)
