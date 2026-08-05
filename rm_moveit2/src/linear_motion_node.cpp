@@ -11,6 +11,8 @@
 
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 
+#include "moveit_node/base_rotation_demo.hpp"
+
 namespace
 {
 
@@ -97,6 +99,9 @@ LinearMotionNode::LinearMotionNode(const rclcpp::NodeOptions & options)
     declare_parameter_if_needed("home_named_target", "forward");
     declare_parameter_if_needed("prefer_named_start", false);
     declare_parameter_if_needed("enable_cartesian_demo", true);
+    declare_parameter_if_needed(
+        "enable_base_rotation_demo",
+        moveit_node::kDefaultBaseRotationDemoEnabled);
     declare_parameter_if_needed("enable_pose_target", false);
     declare_parameter_if_needed("pose_target_csv", std::string(""));
     declare_parameter_if_needed("pose_target_position_in_mm", true);
@@ -589,6 +594,11 @@ bool LinearMotionNode::moveToJointTarget(
 std::size_t LinearMotionNode::getJointCount() const
 {
     return joint_names_.size();
+}
+
+const std::vector<std::string> & LinearMotionNode::getActiveJointNames() const
+{
+    return joint_names_;
 }
 
 bool LinearMotionNode::refreshCurrentState()
