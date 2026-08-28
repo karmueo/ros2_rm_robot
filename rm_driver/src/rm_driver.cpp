@@ -3798,6 +3798,9 @@ void Udp_Robot_Status_Callback(rm_realtime_arm_joint_state_t data)
     // {
     
     // }
+    // Publish the sample only after all fields above have been copied.  The
+    // timer must never expose the zero-initialized cache as real feedback.
+    udp_feedback_sequence.fetch_add(1, std::memory_order_release);
 }
 
 
@@ -3807,6 +3810,12 @@ void UdpPublisherNode::udp_timer_callback()
     {
         // Rm_Api.Service_Realtime_Arm_Joint_State(Udp_RobotStatuscallback);
         Rm_Api.rm_realtime_arm_state_call_back(Udp_Robot_Status_Callback);
+        const auto feedback_sequence =
+            udp_feedback_sequence.load(std::memory_order_acquire);
+        if (feedback_sequence == last_published_feedback_sequence_)
+        {
+            return;
+        }
         udp_joint_error_code_.dof = 6;
         for(int i = 0;i<6;i++)
         {
@@ -3842,6 +3851,10 @@ void UdpPublisherNode::udp_timer_callback()
         udp_real_joint_.header.stamp = this->now();
         this->Joint_Position_Result->publish(udp_real_joint_);
         this->Joint_Error_Code_Result->publish(udp_joint_error_code_);
+        std_msgs::msg::Bool feedback_valid;
+        feedback_valid.data = true;
+        this->Udp_Feedback_Valid_Result->publish(feedback_valid);
+        last_published_feedback_sequence_ = feedback_sequence;
         
         this->Joint_Current_Result->publish(udp_joint_current_);
         this->Joint_En_Flag_Result->publish(udp_joint_en_flag_);
@@ -4091,6 +4104,7 @@ UdpPublisherNode::UdpPublisherNode():
         std::bind(&UdpPublisherNode::heart_timer_callback,this), callback_group_time2_);
         /********************************************************************UDP传输数据**********************************************************/
         Joint_Position_Result = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);                                    //发布当前的关节角度
+        Udp_Feedback_Valid_Result = this->create_publisher<std_msgs::msg::Bool>("rm_driver/udp_feedback_valid", 10);                         //发布真实UDP反馈有效性
         Arm_Position_Result = this->create_publisher<geometry_msgs::msg::Pose>("rm_driver/udp_arm_position", 10);                            //发布当前的关节姿态
         Six_Force_Result = this->create_publisher<rm_ros_interfaces::msg::Sixforce>("rm_driver/udp_six_force", 10);                          //发布当前的原始六维力数据
         Six_Zero_Force_Result = this->create_publisher<rm_ros_interfaces::msg::Sixforce>("rm_driver/udp_six_zero_force", 10);                //发布当前标坐标系下六维力数据
