@@ -16,6 +16,12 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(
+  PROGRAMS scripts/rm_75_initial_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME rm_75_initial_pose
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

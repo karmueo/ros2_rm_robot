@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <unistd.h>             
@@ -127,6 +128,8 @@ using namespace std::chrono_literals;
 //udp数据处理函数
 // void Udp_RobotStatuscallback(RobotStatus Udp_RM_Callback);
 void Udp_Robot_Status_Callback(rm_realtime_arm_joint_state_t data);
+// Incremented only after the SDK has delivered a complete UDP feedback sample.
+std::atomic<unsigned long long> udp_feedback_sequence{0};
 //ctrl+c执行程序
 static void my_handler(int sig);
 //机械臂型号信息
@@ -823,6 +826,7 @@ public:
     bool read_data();
 
 private:
+    unsigned long long last_published_feedback_sequence_ = 0;
     rclcpp::CallbackGroup::SharedPtr callback_group_time1_;
     rclcpp::CallbackGroup::SharedPtr callback_group_time2_;
     rclcpp::CallbackGroup::SharedPtr callback_group_time3_;
@@ -830,6 +834,7 @@ private:
     rclcpp::TimerBase::SharedPtr Heart_Timer;                           //心跳定时器，检查断开情况
     /*****************************************************UDP数据发布话题************************************************/
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr Joint_Position_Result;                                //关节当前状态发布器
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr Udp_Feedback_Valid_Result;                                     //UDP反馈有效性发布器
     rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr Arm_Position_Result;                                      //末端位姿当前状态发布器
     rclcpp::Publisher<rm_ros_interfaces::msg::Sixforce>::SharedPtr Six_Force_Result;                                 //六维力发布器
     rclcpp::Publisher<rm_ros_interfaces::msg::Sixforce>::SharedPtr Six_Zero_Force_Result;                            //六维力目标坐标系下系统受力发布器
