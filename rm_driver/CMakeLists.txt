@@ -23,7 +23,19 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rm_ros_interfaces REQUIRED)
 
-set(RM_API_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/lib/libapi_cpp.so")
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" RM_SYSTEM_PROCESSOR)
+if(RM_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
+  set(RM_API_ARCH_DIRECTORY "linux_x86_c++_v1.1.5")
+elseif(RM_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+  set(RM_API_ARCH_DIRECTORY "linux_arm64_c++_v1.1.5")
+else()
+  message(FATAL_ERROR
+    "Unsupported target architecture '${CMAKE_SYSTEM_PROCESSOR}'. "
+    "The RM SDK is available only for x86-64 and AArch64.")
+endif()
+
+set(RM_API_LIBRARY
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/${RM_API_ARCH_DIRECTORY}/libapi_cpp.so")
 
 include_directories(
   ${PROJECT_SOURCE_DIR}  
@@ -45,7 +57,7 @@ add_executable(rm_driver src/rm_driver.cpp)
 target_link_libraries(rm_driver ${RM_API_LIBRARY})
 
 set_target_properties(rm_driver PROPERTIES
-  BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/lib"
+  BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/${RM_API_ARCH_DIRECTORY}"
   INSTALL_RPATH "$ORIGIN/.."
 )
 

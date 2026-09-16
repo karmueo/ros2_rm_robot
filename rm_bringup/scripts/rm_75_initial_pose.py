@@ -125,14 +125,14 @@ class InitialPoseMover(Node):
 
         command = Movej()
         command.joint = self.target
-        command.speed = 10
+        command.speed = 50
         command.block = True
         command.trajectory_connect = 0
         command.dof = 7
         self.command_sent_at = now
         self.command_publisher.publish(command)
         self.get_logger().warning(
-            "Moving RM75 to the configured initial pose at 10% speed"
+            "Moving RM75 to the configured initial pose at 50% speed"
         )
 
 
