@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- RM75 机械臂的连杆、关节及惯性参数描述。 -->
 <robot name="rm_75_description">
   <link name="base_link">
     <inertial>

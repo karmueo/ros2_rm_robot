@@ -1,3 +1,5 @@
+"""启动 RM75 驱动、模型和控制组件，并按参数配置初始姿态与 RViz。"""
+
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -9,8 +11,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-# Values are in radians and ordered joint1 through joint7. The corresponding
-# angles in degrees are [0, 20, 0, 70, 0, 90, 90].
+# 按 joint1 至 joint7 顺序排列的初始角度，单位为弧度；对应角度为 [0, 20, 0, 70, 0, 90, 90] 度。
 INITIAL_JOINT_POSITIONS = [
     0.0,
     0.3490658503988659,
@@ -23,6 +24,7 @@ INITIAL_JOINT_POSITIONS = [
 
 
 def generate_launch_description():
+    """声明初始姿态与 RViz 开关，并组合 RM75 实机启动组件。"""
     move_to_initial_pose = LaunchConfiguration("move_to_initial_pose")
     use_rviz = LaunchConfiguration("use_rviz")
 

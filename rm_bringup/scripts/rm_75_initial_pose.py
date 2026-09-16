@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Move an RM75 to a launch-provided initial joint pose once."""
+"""等待真实关节反馈后，将 RM75 移动到启动参数指定的初始姿态。"""
 
 import time
 
@@ -10,32 +10,47 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool
 
 
+# 按驱动命名顺序排列的七个关节名称。
 JOINT_NAMES = tuple(f"joint{index}" for index in range(1, 8))
+# 等待驱动订阅和有效反馈的最长时间。
 READY_TIMEOUT_SECONDS = 30.0
+# 等待阻塞式 MoveJ 返回结果的最长时间。
 RESULT_TIMEOUT_SECONDS = 120.0
+# 判定当前姿态已到达目标的最大关节误差，单位为弧度。
 ALREADY_AT_TARGET_TOLERANCE = 0.01
+# 判定关节状态和驱动反馈新鲜度的时间窗口。
 FEEDBACK_FRESHNESS_SECONDS = 0.5
 
 
 class InitialPoseMover(Node):
-    """Wait for real feedback, then send exactly one blocking MoveJ command."""
+    """仅在收到新鲜有效反馈后发送一次阻塞式 MoveJ 指令。"""
 
     def __init__(self):
+        """初始化目标关节角、状态订阅、指令发布器与超时定时器。"""
         super().__init__("rm_75_initial_pose")
         self.declare_parameter("initial_joint_positions", [0.0] * 7)
         target = self.get_parameter("initial_joint_positions").value
         if len(target) != 7:
             raise ValueError("initial_joint_positions must contain seven values")
 
+        # 启动参数指定的七个目标关节角度。
         self.target = [float(value) for value in target]
+        # 最近一次完整关节状态中的角度。
         self.current_positions = None
+        # 最近一次完整关节状态的接收时间。
         self.last_feedback_at = None
+        # 最近一次有效 UDP 反馈信号的接收时间。
         self.last_valid_feedback_at = None
+        # 节点开始等待反馈的时间。
         self.started_at = time.monotonic()
+        # 初始姿态指令发送时间，未发送时为空。
         self.command_sent_at = None
+        # 节点动作是否结束。
         self.finished = False
+        # 节点动作是否失败。
         self.failed = False
 
+        # 向驱动发送一次初始姿态运动指令的发布器。
         self.command_publisher = self.create_publisher(
             Movej, "/rm_driver/movej_cmd", 10
         )
@@ -57,6 +72,7 @@ class InitialPoseMover(Node):
         )
 
     def _joint_state_callback(self, message):
+        """按关节名记录完整的关节状态与接收时间。"""
         if len(message.name) != len(message.position):
             return
         positions_by_name = dict(zip(message.name, message.position))
@@ -68,14 +84,17 @@ class InitialPoseMover(Node):
         self.last_feedback_at = time.monotonic()
 
     def _feedback_valid_callback(self, message):
+        """记录驱动最新一次有效 UDP 反馈的接收时间。"""
         if message.data:
             self.last_valid_feedback_at = time.monotonic()
 
     def _finish(self, *, failed=False):
+        """标记动作已结束及其失败状态。"""
         self.finished = True
         self.failed = failed
 
     def _result_callback(self, message):
+        """处理驱动返回的 MoveJ 执行结果。"""
         if self.command_sent_at is None or self.finished:
             return
         if message.data:
@@ -86,6 +105,7 @@ class InitialPoseMover(Node):
             self._finish(failed=True)
 
     def _timer_callback(self):
+        """等待新鲜反馈和驱动订阅者，满足条件后发送目标或超时报错。"""
         if self.finished:
             return
 
@@ -137,6 +157,7 @@ class InitialPoseMover(Node):
 
 
 def main(args=None):
+    """运行初始姿态节点，按动作结果返回进程退出码。"""
     rclpy.init(args=args)
     node = InitialPoseMover()
     try:

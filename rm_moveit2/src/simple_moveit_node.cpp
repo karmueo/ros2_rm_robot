@@ -1,3 +1,7 @@
+/**
+ * @file simple_moveit_node.cpp
+ * @brief 运行 MoveIt 示教流程，包括可选的 RM75 底座扫转。
+ */
 #include <chrono>
 #include <cmath>
 #include <initializer_list>
@@ -266,10 +270,13 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    /** 是否执行底座扫转示教。 */
     const bool enable_base_rotation_demo =
         node->get_parameter("enable_base_rotation_demo").as_bool();
 
+    /** 保存底座扫转目标生成或执行的失败原因。 */
     std::string rotation_error;
+    /** 将单步扫转目标交给 MoveIt 执行的回调。 */
     const auto execute_rotation_step = [&node](const moveit_node::BaseRotationStep & step) {
         RCLCPP_INFO(node->get_logger(), "=== 底座扫转示教: %s ===", step.context.c_str());
         return node->moveToJointTarget(step.joint_values, step.context);

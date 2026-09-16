@@ -13,6 +13,10 @@
 // limitations under the License.
 
 
+/**
+ * @file rm_driver.cpp
+ * @brief 实现机械臂驱动与真实 UDP 反馈的发布逻辑。
+ */
 #include "rm_driver.h"
 
 using namespace std::chrono_literals;
@@ -3798,8 +3802,7 @@ void Udp_Robot_Status_Callback(rm_realtime_arm_joint_state_t data)
     // {
     
     // }
-    // Publish the sample only after all fields above have been copied.  The
-    // timer must never expose the zero-initialized cache as real feedback.
+    // 仅在 SDK 完整更新反馈后递增序号，避免把零初始化缓存当作真实状态发布。
     udp_feedback_sequence.fetch_add(1, std::memory_order_release);
 }
 
@@ -3810,6 +3813,7 @@ void UdpPublisherNode::udp_timer_callback()
     {
         // Rm_Api.Service_Realtime_Arm_Joint_State(Udp_RobotStatuscallback);
         Rm_Api.rm_realtime_arm_state_call_back(Udp_Robot_Status_Callback);
+        /** @brief SDK 最近一次完整反馈的序号。 */
         const auto feedback_sequence =
             udp_feedback_sequence.load(std::memory_order_acquire);
         if (feedback_sequence == last_published_feedback_sequence_)
@@ -3851,6 +3855,7 @@ void UdpPublisherNode::udp_timer_callback()
         udp_real_joint_.header.stamp = this->now();
         this->Joint_Position_Result->publish(udp_real_joint_);
         this->Joint_Error_Code_Result->publish(udp_joint_error_code_);
+        /** @brief 通知订阅者本周期已收到真实 UDP 反馈。 */
         std_msgs::msg::Bool feedback_valid;
         feedback_valid.data = true;
         this->Udp_Feedback_Valid_Result->publish(feedback_valid);

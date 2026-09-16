@@ -1,3 +1,5 @@
+"""启动 RM75 实机 MoveIt，并按参数决定是否启动 RViz。"""
+
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launches import generate_moveit_rviz_launch
 
@@ -17,7 +19,8 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("rm_75_description", package_name="rm_75_config").to_moveit_configs() 
+    """按 RM75 配置启动 move_group，并按参数决定是否启动 RViz。"""
+    moveit_config = MoveItConfigsBuilder("rm_75_description", package_name="rm_75_config").to_moveit_configs()
 
     ld = LaunchDescription()
 
@@ -40,6 +43,7 @@ def generate_launch_description():
 
 
 def my_generate_move_group_launch(ld, moveit_config):
+    """向启动描述添加实机 MoveIt 规划节点及其参数。"""
 
     ld.add_action(DeclareBooleanLaunchArg("debug", default_value=False))
     ld.add_action(
@@ -103,7 +107,7 @@ def my_generate_move_group_launch(ld, moveit_config):
     return ld
 
 def my_generate_moveit_rviz_launch(ld, moveit_config):
-    """Launch file for rviz"""
+    """向启动描述添加带 MoveIt 配置的 RViz 节点。"""
 
     ld.add_action(DeclareBooleanLaunchArg("debug", default_value=False))
     ld.add_action(
@@ -129,4 +133,3 @@ def my_generate_moveit_rviz_launch(ld, moveit_config):
     )
 
     return ld
-

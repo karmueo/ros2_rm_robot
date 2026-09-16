@@ -1,3 +1,4 @@
+# 安装 RM75 启动文件与初始姿态执行节点。
 cmake_minimum_required(VERSION 3.8)
 project(rm_bringup)
 

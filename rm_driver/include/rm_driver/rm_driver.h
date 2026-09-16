@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @file rm_driver.h
+ * @brief 声明机械臂驱动节点及 UDP 反馈状态。
+ */
 #include <iostream>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/clock.hpp" 
@@ -128,7 +132,7 @@ using namespace std::chrono_literals;
 //udp数据处理函数
 // void Udp_RobotStatuscallback(RobotStatus Udp_RM_Callback);
 void Udp_Robot_Status_Callback(rm_realtime_arm_joint_state_t data);
-// Incremented only after the SDK has delivered a complete UDP feedback sample.
+/** @brief SDK 每次完整更新 UDP 反馈后递增的序号。 */
 std::atomic<unsigned long long> udp_feedback_sequence{0};
 //ctrl+c执行程序
 static void my_handler(int sig);
@@ -826,6 +830,7 @@ public:
     bool read_data();
 
 private:
+    /** @brief 最近一次已发布的完整 UDP 反馈序号。 */
     unsigned long long last_published_feedback_sequence_ = 0;
     rclcpp::CallbackGroup::SharedPtr callback_group_time1_;
     rclcpp::CallbackGroup::SharedPtr callback_group_time2_;

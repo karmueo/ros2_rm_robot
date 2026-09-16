@@ -1,3 +1,7 @@
+/**
+ * @file linear_motion_node.cpp
+ * @brief 实现 MoveIt 关节目标和笛卡尔轨迹运动。
+ */
 #include "moveit_node/linear_motion_node.hpp"
 
 #include <cmath>
@@ -594,6 +598,7 @@ std::size_t LinearMotionNode::getJointCount() const
     return joint_names_.size();
 }
 
+/** @brief 按规划组顺序返回活动关节名称。 */
 const std::vector<std::string> & LinearMotionNode::getActiveJointNames() const
 {
     return joint_names_;

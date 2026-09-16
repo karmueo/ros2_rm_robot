@@ -1,3 +1,7 @@
+/**
+ * @file linear_motion_node.hpp
+ * @brief 声明 MoveIt 关节与笛卡尔运动示教节点。
+ */
 #pragma once
 
 #include <cstddef>
