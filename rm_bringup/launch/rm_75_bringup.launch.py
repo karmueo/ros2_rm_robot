@@ -24,6 +24,7 @@ INITIAL_JOINT_POSITIONS = [
 
 def generate_launch_description():
     move_to_initial_pose = LaunchConfiguration("move_to_initial_pose")
+    use_rviz = LaunchConfiguration("use_rviz")
 
     rm_75_driver = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -62,7 +63,8 @@ def generate_launch_description():
                 "launch",
                 "real_moveit_demo.launch.py",
             )
-        )
+        ),
+        launch_arguments={"use_rviz": use_rviz}.items(),
     )
 
     initial_pose_node = Node(
@@ -83,6 +85,11 @@ def generate_launch_description():
                     "Whether to move RM75 to the configured initial joint pose "
                     "at startup."
                 ),
+            ),
+            DeclareLaunchArgument(
+                "use_rviz",
+                default_value="false",
+                description="Whether to start RViz2.",
             ),
             rm_75_driver,
             rm_75_description,
