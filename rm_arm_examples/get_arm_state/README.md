@@ -1,5 +1,7 @@
 # 获取机械臂状态`GET_ARM_STATE_DEMO`
 
+> **FastUMI workspace environment:** This package uses the shared NumPy 1 environment on ROS 2 Jazzy. Build and run it with the [workspace guide](../../../../README.md#两套共享-python-环境); use `python -m colcon` from `.venv-numpy1` in this checkout.
+
 ---
 
 ## 1.项目介绍

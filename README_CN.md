@@ -1,5 +1,7 @@
 <div align="right">
 
+<!-- 本文档说明睿尔曼机械臂包及其在 FastUMI 工作区的共享环境使用方式。 -->
+
 [中文简体](https://github.com/RealManRobot/ros2_rm_robot/blob/jazzy/README_CN.md)|
 [English](https://github.com/RealManRobot/ros2_rm_robot/blob/jazzy/README.md)
 
@@ -65,16 +67,27 @@ sudo bash lib_install.sh
 
 ---
 
-以上执行成功后，可以执行如下指令进行功能包编译，首先需要构建工作空间，并将功能包文件导入工作空间下的src文件夹下，之后使用colcon build指令进行编译。
+本项目已包含 `ros2_ws/src/ros2_rm_robot`，无需重新创建工作空间或复制功能包。所有机械臂包归属共享的 NumPy 1 环境；先按[工作区说明](../../README.md#两套共享-python-环境)创建环境，再从项目根目录执行：
 
+```bash
+cd ros2_ws
+source /opt/ros/jazzy/setup.bash
+source .venv-numpy1/bin/activate
+PATH="$VIRTUAL_ENV/bin:/opt/ros/jazzy/bin:/usr/bin:/bin" \
+  python -m colcon build --build-base build \
+  --symlink-install --packages-select rm_ros_interfaces
+source install/setup.bash
+PATH="$VIRTUAL_ENV/bin:/opt/ros/jazzy/bin:/usr/bin:/bin" \
+  python -m colcon build --build-base build \
+  --symlink-install --packages-select rm_moveit2 --cmake-clean-cache \
+  --cmake-args -DBoost_DIR=/usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0
+PATH="$VIRTUAL_ENV/bin:/opt/ros/jazzy/bin:/usr/bin:/bin" \
+  python -m colcon build --build-base build \
+  --symlink-install --packages-skip tracker_teleoperated
+source install/setup.bash
 ```
-mkdir -p ~/ros2_ws/src
-cp -r ros2_rm_robot ~/ros2_ws/src
-cd ~/ros2_ws
-colcon build --packages-select rm_ros_interfaces
-source ./install/setup.bash
-colcon build
-```
+
+本机同时安装了 `/usr/local` 下的 Boost 1.91 和系统 Boost 1.83。上述 `Boost_DIR` 指向与系统 `boost_system` 匹配的版本；`--cmake-clean-cache` 用于清除之前缓存的 Boost 路径。该路径适用于当前 Ubuntu x86-64 环境，其他机器请改为本机系统 Boost 的 `BoostConfig.cmake` 所在目录。命令中的 `PATH` 仅对相应的构建进程生效，避免 Anaconda 的库干扰 ROS 链接，同时保留 NumPy 1 环境的 Python。
 
 编译完成后即可进行功能包的运行操作。
 
@@ -134,10 +147,12 @@ colcon build
 
 ---
 
-使用如下指令可以启动gazebo显示仿真机械臂，并同时启动moveit2进行仿真机械臂的规划操控。
+在项目根目录执行如下指令，可以启动gazebo显示仿真机械臂，并同时启动moveit2进行仿真机械臂的规划操控。
 
-```
-source ~/ros2_ws/install/setup.bash
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/.venv-numpy1/bin/activate
+source ros2_ws/install/setup.bash
 ros2 launch rm_bringup rm_<arm_type>_gazebo.launch.py
 ```
 
@@ -153,10 +168,12 @@ ros2 launch rm_bringup rm_65_gazebo.launch.py
 
 ---
 
-使用如下指令可以启动机械臂硬件驱动，并同时启动moveit2进行机械臂的规划操控。
+在项目根目录执行如下指令，可以启动机械臂硬件驱动，并同时启动moveit2进行机械臂的规划操控。
 
-```
-source ~/ros2_ws/install/setup.bash
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/.venv-numpy1/bin/activate
+source ros2_ws/install/setup.bash
 ros2 launch rm_bringup rm_<arm_type>_bringup.launch.py
 ```
 
@@ -167,6 +184,78 @@ ros2 launch rm_bringup rm_65_bringup.launch.py
 ```
 
 启动成功后即可使用moveit2进行真实机械臂的控制。
+
+#### 更换电脑或网络时配置 RM75 的 IP
+
+`rm_75_bringup.launch.py` 会加载 `rm_driver` 的
+[`rm_75_config.yaml`](rm_driver/config/rm_75_config.yaml)。在**运行驱动的电脑**上，
+先确认机械臂控制器的实际 IP、TCP 端口，以及该电脑连接机械臂的网卡 IP，
+再修改配置文件中的以下参数：
+
+| 参数 | 填写内容 | 当前配置示例 |
+| --- | --- | --- |
+| `arm_ip` | 机械臂控制器的实际 IP，驱动向此地址建立 TCP 连接 | `192.168.1.18` |
+| `tcp_port` | 控制器的 TCP 服务端口，需与控制器设置一致 | `8080` |
+| `udp_ip` | **运行 `rm_driver` 的电脑**接收机械臂状态的网卡 IP；多网卡时选连接机械臂的网卡 | `192.168.1.10` |
+| `udp_port` | 该电脑接收机械臂主动上报的 UDP 端口，需与控制器上报设置一致 | `8089` |
+
+`arm_ip` 与 `udp_ip` 分别指向机械臂和驱动电脑。若将驱动迁到另一台电脑，
+请把 `udp_ip` 改为**新驱动电脑**在机械臂网络中的地址；若机械臂的地址也变化，
+同时修改 `arm_ip`。电脑网卡的 IP、子网掩码和路由应先在操作系统网络设置中
+配置，使电脑能够访问机械臂。以下命令在驱动电脑上检查网卡和到机械臂的
+路由；将地址替换为实际的 `arm_ip`：
+
+```bash
+ip -br -4 addr
+ip route get 192.168.1.18
+nc -vz -w 2 192.168.1.18 8080
+```
+
+`ip route get` 输出中的 `src` 应是驱动电脑连接机械臂所用的本机地址，并与
+`udp_ip` 对应。若持续出现 `Waiting for connect`，先核对控制器是否上电、
+网线及控制器实际 IP，再检查该 TCP 端口；这条日志发生在初始姿态运动之前。
+TCP 已连通但收不到 `/joint_states` 或 `/rm_driver/udp_feedback_valid` 时，
+再检查 `udp_ip`、`udp_port` 和该电脑的 UDP 防火墙规则。
+
+本工作区使用 `--symlink-install`，已安装的 RM75 配置链接到上述源文件；
+修改后停止并重新启动 launch 即可。若在另一台电脑使用普通复制安装，
+修改源文件后需重新构建 `rm_driver` 并加载新的 `install/setup.bash`。
+机械臂驱动与遥操节点分布在不同电脑时，`udp_ip` 仍填写**驱动电脑**的地址；
+两台电脑的 ROS 2 节点还需能够互相发现，并使用相同的 `ROS_DOMAIN_ID`。
+其他机械臂型号请修改 `rm_driver/config/` 下对应型号的 YAML 文件。
+
+确认连接及关节反馈前，先在已加载工作区环境的终端禁用自动运动启动：
+
+```bash
+ros2 launch rm_bringup rm_75_bringup.launch.py move_to_initial_pose:=false
+```
+
+驱动连接成功后，在另一终端检查 `ros2 topic echo /joint_states --once` 和
+`ros2 topic echo /rm_driver/udp_feedback_valid --once`；后者应收到 `data: true`。
+确认反馈并停止本次 launch 后，再按下节启用初始姿态运动。
+`move_to_initial_pose:=true` 会在反馈就绪后发送真实运动指令。
+
+#### RM75 启动时移动到初始姿态
+
+需要在启动 RM75 实机驱动后自动移动到预设关节姿态时，在已按上文加载
+ROS 2 Jazzy、`.venv-numpy1` 和工作区 `install/setup.bash` 的终端执行：
+
+```bash
+ros2 launch rm_bringup rm_75_bringup.launch.py move_to_initial_pose:=true
+```
+
+`move_to_initial_pose` 默认为 `false`，省略该参数时不会执行初始姿态运动。
+设为 `true` 后，启动文件会运行一次 `rm_75_initial_pose` 节点。目标关节角按
+`joint1` 至 `joint7` 顺序为 `[0°, 20°, 0°, 70°, 0°, 90°, 90°]`，配置在
+`rm_bringup/launch/rm_75_bringup.launch.py` 中。节点等待完整且新鲜的
+`/joint_states`、有效的 `/rm_driver/udp_feedback_valid` 和驱动对
+`/rm_driver/movej_cmd` 的订阅，然后以 20% 速度发送一次阻塞式 MoveJ。
+已处于目标姿态时不会重复发送运动指令；等待就绪超过 30 秒或等待执行结果
+超过 120 秒时，节点报错退出。启动文件的其他组件仍按正常流程运行。
+
+此命令会控制真实机械臂运动。执行前确认 RM75 型号与关节配置正确、运动路径
+和工作范围内无人及障碍物，并确保急停可用。需要同时打开 RViz2 时，可在命令
+末尾追加 `use_rviz:=true`。
 
 ### 安全提示
 

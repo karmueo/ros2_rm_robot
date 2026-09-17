@@ -8,6 +8,8 @@
 
 # RealMan Robotic Arm rm_gazebo User Manual V1.6
 
+> **FastUMI workspace environment:** This package uses the shared NumPy 1 environment on ROS 2 Jazzy. Build and run it with the [workspace guide](../../../README.md#两套共享-python-环境); use `python -m colcon` from `.venv-numpy1` in this checkout.
+
 RealMan Intelligent Technology (Beijing) Co., Ltd. 
 
 Revision History:

@@ -1,5 +1,7 @@
 <div align="right">
 
+<!-- 本文档说明 RM75 ROS 2 包及其在 FastUMI 工作区的共享环境使用方式。 -->
+
 [中文简体](https://github.com/RealManRobot/ros2_rm_robot/blob/jazzy/README_CN.md)|
 [English](https://github.com/RealManRobot/ros2_rm_robot/blob/jazzy/README.md)
 
@@ -65,15 +67,24 @@ sudo bash lib_install.sh
 
 ---
 
-After the above execution is successful, execute the following commands to compile the package. First, we need to build a workspace and import the package file into the src folder under the workspace, and then use the colcon build command to compile.
+In this FastUMI checkout, all `ros2_rm_robot` packages use the shared NumPy 1
+environment. Create it using the [workspace instructions](../../README.md#两套共享-python-环境),
+then build from the FastUMI workspace root. The local Boost path below matches
+Ubuntu 24.04 on this host; adjust it on other hosts.
 
-```
-mkdir -p ~/ros2_ws/src
-cp -r ros2_rm_robot ~/ros2_ws/src
-cd ~/ros2_ws
-colcon build --packages-select rm_ros_interfaces
-source ./install/setup.bash
-colcon build
+```bash
+cd ros2_ws
+source /opt/ros/jazzy/setup.bash
+source .venv-numpy1/bin/activate
+PATH="$VIRTUAL_ENV/bin:/opt/ros/jazzy/bin:/usr/bin:/bin" \
+  python -m colcon build --build-base build \
+  --symlink-install --packages-select rm_ros_interfaces
+source install/setup.bash
+PATH="$VIRTUAL_ENV/bin:/opt/ros/jazzy/bin:/usr/bin:/bin" \
+  python -m colcon build --build-base build \
+  --symlink-install --packages-select rm_moveit2 --cmake-clean-cache \
+  --cmake-args -DBoost_DIR=/usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0
+source install/setup.bash
 ```
 
 After the compilation is completed, the package can be run.
@@ -137,7 +148,9 @@ The above are the current major packages. Each package has its own role. For mor
 Use the following command to launch the gazebo to display the simulation robotic arm, and launch moveit2 for the planning and control of the simulation robotic arm.
 
 ```
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/.venv-numpy1/bin/activate
+source ros2_ws/install/setup.bash
 ros2 launch rm_bringup rm_<arm_type>_gazebo.launch.py
 ```
 
@@ -156,7 +169,9 @@ After successful launch, you can use moveit2 for the control of the virtual robo
 Use the following command to launch the hardware driver of the robotic arm, and launch moveit2 for the planning and control of the robotic arm.
 
 ```
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/.venv-numpy1/bin/activate
+source ros2_ws/install/setup.bash
 ros2 launch rm_bringup rm_<arm_type>_bringup.launch.py
 ```
 

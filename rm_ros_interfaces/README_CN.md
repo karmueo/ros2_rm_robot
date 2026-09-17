@@ -9,6 +9,8 @@
 
 # 睿尔曼机器人rm_ros_interface使用说明书V1.2.1
 
+> **FastUMI 工作区环境：**本包归属 ROS 2 Jazzy 的共享 NumPy 1 环境。请按[工作区说明](../../../README.md#两套共享-python-环境)加载 `.venv-numpy1`，再用该环境的 `python -m colcon` 构建与运行。
+
 
  
 
