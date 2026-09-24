@@ -110,6 +110,11 @@ int Arm_Socket_Start_Connect(void)
     return 0;
 }
 
+/**
+ * @brief 初始化 SDK 并连接机械臂，成功后注册 UDP 状态回调。
+ * @return 始终返回 0；连接失败由 SDK 句柄状态和日志报告。
+ * @note 初次连接和断线重连均调用此函数；每次连接只注册一次回调。
+ */
 int Arm_Start(void)
 {
     std::string version;
@@ -124,6 +129,10 @@ int Arm_Start(void)
     {
         rm_delete_robot_arm(robot_handle);
         std::cout<<"arm connect err..."<< robot_handle << std::endl;
+    }
+    else
+    {
+        Rm_Api.rm_realtime_arm_state_call_back(Udp_Robot_Status_Callback);
     }
     // else if(robot_handle != NULL)
     // {
@@ -3811,8 +3820,6 @@ void UdpPublisherNode::udp_timer_callback()
 {
     if(connect_state == 0)
     {
-        // Rm_Api.Service_Realtime_Arm_Joint_State(Udp_RobotStatuscallback);
-        Rm_Api.rm_realtime_arm_state_call_back(Udp_Robot_Status_Callback);
         /** @brief SDK 最近一次完整反馈的序号。 */
         const auto feedback_sequence =
             udp_feedback_sequence.load(std::memory_order_acquire);
@@ -4346,7 +4353,8 @@ RmArm::RmArm():
         std::bind(&RmArm::Arm_MoveC_Callback,this,std::placeholders::_1),
         sub_opt4);
     /******************************************角度透传*****************************************/
-    Movej_CANFD_Cmd = this->create_subscription<rm_ros_interfaces::msg::Jointpos>("rm_driver/movej_canfd_cmd",rclcpp::ParametersQoS(),
+    // 高频透传指令只消费最新目标，避免 SDK 短暂阻塞后执行积压的旧目标。
+    Movej_CANFD_Cmd = this->create_subscription<rm_ros_interfaces::msg::Jointpos>("rm_driver/movej_canfd_cmd",rclcpp::QoS(1),
         std::bind(&RmArm::Arm_Movej_CANFD_Callback,this,std::placeholders::_1),
         sub_opt4);
     Movej_CANFD_Custom_Cmd = this->create_subscription<rm_ros_interfaces::msg::Jointposcustom>("rm_driver/movej_canfd_custom_cmd",rclcpp::ParametersQoS(),
