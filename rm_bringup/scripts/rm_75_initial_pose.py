@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Move an RM75 to a launch-provided initial joint pose once."""
+"""Move an RM75 once to the workspace's canonical initial_pose.yaml target."""
 
+import math
+from pathlib import Path
 import time
 
 import rclpy
@@ -8,6 +10,7 @@ from rclpy.node import Node
 from rm_ros_interfaces.msg import Movej
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool
+import yaml
 
 
 JOINT_NAMES = tuple(f"joint{index}" for index in range(1, 8))
@@ -17,17 +20,32 @@ ALREADY_AT_TARGET_TOLERANCE = 0.01
 FEEDBACK_FRESHNESS_SECONDS = 0.5
 
 
+def load_initial_joint_positions():
+    """Read joint1..joint7 in degrees from the source YAML and return radians.
+
+    Read the file directly so rm_bringup need not depend on fastumi_bringup,
+    which already depends on rm_bringup for this executable.
+    """
+    for parent in Path(__file__).resolve().parents:
+        config = parent / 'src/fastumi_bringup/config/initial_pose.yaml'
+        if config.is_file():
+            with config.open(encoding='utf-8') as stream:
+                data = yaml.safe_load(stream)
+            target = data.get('initial_joint_positions_deg') if isinstance(data, dict) else None
+            if (not isinstance(target, list) or len(target) != len(JOINT_NAMES)
+                    or not all(isinstance(value, (int, float)) and not isinstance(value, bool)
+                               and math.isfinite(value) for value in target)):
+                raise ValueError(f'{config}: expected seven finite joint angles in degrees')
+            return [math.radians(value) for value in target]
+    raise FileNotFoundError('Cannot find src/fastumi_bringup/config/initial_pose.yaml')
+
+
 class InitialPoseMover(Node):
     """Wait for real feedback, then send exactly one blocking MoveJ command."""
 
     def __init__(self):
         super().__init__("rm_75_initial_pose")
-        self.declare_parameter("initial_joint_positions", [0.0] * 7)
-        target = self.get_parameter("initial_joint_positions").value
-        if len(target) != 7:
-            raise ValueError("initial_joint_positions must contain seven values")
-
-        self.target = [float(value) for value in target]
+        self.target = load_initial_joint_positions()
         self.current_positions = None
         self.last_feedback_at = None
         self.last_valid_feedback_at = None

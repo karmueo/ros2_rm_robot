@@ -9,19 +9,6 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-# Values are in radians and ordered joint1 through joint7. The corresponding
-# angles in degrees are [0, 20, 0, 70, 0, 90, 90].
-INITIAL_JOINT_POSITIONS = [
-    0.0,
-    0.3490658503988659,
-    0.0,
-    1.2217304763960306,
-    0.0,
-    1.5707963267948966,
-    1.5707963267948966,
-]
-
-
 def generate_launch_description():
     move_to_initial_pose = LaunchConfiguration("move_to_initial_pose")
     use_rviz = LaunchConfiguration("use_rviz")
@@ -71,7 +58,6 @@ def generate_launch_description():
         package="rm_bringup",
         executable="rm_75_initial_pose",
         name="rm_75_initial_pose",
-        parameters=[{"initial_joint_positions": INITIAL_JOINT_POSITIONS}],
         output="screen",
         condition=IfCondition(move_to_initial_pose),
     )
